@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="te">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>తెలుగు మాటలు - తెలుగు పదాలు</title>
+    <link rel="stylesheet" href="Tstyle.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="container">
+        <h1>తెలుగు మాటలు - తెలుగు పదాలు</h1>
+        <p class="subtitle">దయచేసి మాట్లాడి, ఆ తర్వాత ఫలితాన్ని చూడండి</p>
+
+        <div class="btn-container">
+            <button id="start-btn">▶ ప్రారంభించు</button>
+            <button id="reset-btn" style="display: none;">↺ మళ్ళీ మొదలు పెట్టు</button>
+            <div class="loading-spinner" id="spinner"></div>
+        </div>
+
+        <div id="speech-output">ఇక్కడ మీరు మాట్లాడిన పదాలు కనిపిస్తాయి...</div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const output = document.getElementById('speech-output');
+        const spinner = document.getElementById('spinner');
+
+        let recognition;
+
+        startBtn.addEventListener('click', () => {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("మీ బ్రౌజర్ మాట్లాడిన పదాలను గుర్తించలేదు. Chrome బ్రౌజర్ వాడండి.");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'te-IN';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            output.innerText = "వినిపిస్తోంది... దయచేసి మాట్లాడండి.";
+            spinner.style.display = 'block';
+            startBtn.disabled = true;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                output.innerText = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                output.innerText = "లోపం: " + event.error;
+            };
+
+            recognition.onend = () => {
+                spinner.style.display = 'none';
+                startBtn.disabled = false;
+                resetBtn.style.display = 'inline-block';
+            };
+
+            recognition.start();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            output.innerText = "ఇక్కడ మీరు మాట్లాడిన పదాలు కనిపిస్తాయి...";
+            resetBtn.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
