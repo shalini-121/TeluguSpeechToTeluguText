@@ -14,8 +14,8 @@
         <p class="subtitle">దయచేసి మాట్లాడి, ఆ తర్వాత ఫలితాన్ని చూడండి</p>
 
         <div class="btn-container">
-            <button id="start-btn">▶ ప్రారంభించు</button>
-            <button id="reset-btn" style="display: none;">↺ మళ్ళీ మొదలు పెట్టు</button>
+            <button id="toggle-btn">▶ ప్రారంభించు</button>
+            <button id="copy-btn" style="display:none;">📋 కాపీ</button>
             <div class="loading-spinner" id="spinner"></div>
         </div>
 
@@ -23,51 +23,69 @@
     </div>
 
     <script>
-        const startBtn = document.getElementById('start-btn');
-        const resetBtn = document.getElementById('reset-btn');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const copyBtn = document.getElementById('copy-btn');
         const output = document.getElementById('speech-output');
         const spinner = document.getElementById('spinner');
 
-        let recognition;
+        let recognizing = false;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-        startBtn.addEventListener('click', () => {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("మీ బ్రౌజర్ మాట్లాడిన పదాలను గుర్తించలేదు. Chrome బ్రౌజర్ వాడండి.");
-                return;
+        if (!SpeechRecognition) {
+            alert("మీ బ్రౌజర్ మాట్లాడిన పదాలను గుర్తించలేదు. Chrome బ్రౌజర్ వాడండి.");
+        }
+
+        const recog = new SpeechRecognition();
+        recog.lang = "te-IN";
+        recog.continuous = true;
+        recog.interimResults = true;
+
+        // Toggle Start/Stop
+        toggleBtn.onclick = function() {
+            if (recognizing) {
+                recog.stop();
+            } else {
+                output.innerText = "";
+                recog.start();
             }
+        };
 
-            recognition = new SpeechRecognition();
-            recognition.lang = 'te-IN';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-
+        recog.onstart = () => {
+            recognizing = true;
+            toggleBtn.innerText = "■ ఆపు";
+            spinner.style.display = "block";
+            output.style.color = "#777";
             output.innerText = "వినిపిస్తోంది... దయచేసి మాట్లాడండి.";
-            spinner.style.display = 'block';
-            startBtn.disabled = true;
+        };
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                output.innerText = transcript;
-            };
+        recog.onend = () => {
+            recognizing = false;
+            toggleBtn.innerText = "▶ ప్రారంభించు";
+            spinner.style.display = "none";
+            if (output.innerText.trim() === "" || output.innerText.includes("వినిపిస్తోంది")) {
+                output.innerText = "ఇక్కడ మీరు మాట్లాడిన పదాలు కనిపిస్తాయి...";
+            }
+        };
 
-            recognition.onerror = (event) => {
-                output.innerText = "లోపం: " + event.error;
-            };
+        recog.onresult = (e) => {
+            let idx = e.resultIndex;
+            let result = e.results[idx];
+            let txt = result[result.length - 1].transcript;
 
-            recognition.onend = () => {
-                spinner.style.display = 'none';
-                startBtn.disabled = false;
-                resetBtn.style.display = 'inline-block';
-            };
+            if (result.isFinal) {
+                output.innerText += " " + txt;
+                output.style.color = "#000";
+                copyBtn.style.display = "inline-block";
+            } else {
+                output.innerText = txt;
+                output.style.color = "#777";
+            }
+        };
 
-            recognition.start();
-        });
-
-        resetBtn.addEventListener('click', () => {
-            output.innerText = "ఇక్కడ మీరు మాట్లాడిన పదాలు కనిపిస్తాయి...";
-            resetBtn.style.display = 'none';
-        });
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(output.innerText);
+            alert("పదాలు కాపీ అయ్యాయి!");
+        };
     </script>
 </body>
 </html>

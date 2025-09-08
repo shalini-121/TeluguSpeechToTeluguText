@@ -88,4 +88,5 @@ button:hover {
     color: #5d4037;
     min-height: 80px;
     margin-top: 10px;
+    text-align: left;
 }
