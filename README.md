@@ -1,4 +1,4 @@
-<img width="1426" height="770" alt="Screenshot (23)" src="https://github.com/user-attachments/assets/2d93b89c-4aa1-4b51-b734-9016fd20b1fa" /># తెలుగు మాటలు - తెలుగు పదాలు 🎤➡️📝
+## తెలుగు మాటలు - తెలుగు పదాలు 🎤➡️📝
 
 A simple **Telugu Speech-to-Text Converter** built using the **Web Speech API**.  
 Speak in Telugu 🎙️ and instantly see the words converted into **Telugu script ✨**.
