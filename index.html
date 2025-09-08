@@ -29,6 +29,8 @@
         const spinner = document.getElementById('spinner');
 
         let recognizing = false;
+        let finalTranscript = ""; // store confirmed results
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
@@ -46,6 +48,7 @@
                 recog.stop();
             } else {
                 output.innerText = "";
+                finalTranscript = "";
                 recog.start();
             }
         };
@@ -67,24 +70,41 @@
             }
         };
 
+        // ✅ Fixed onresult (no duplicate text)
         recog.onresult = (e) => {
-            let idx = e.resultIndex;
-            let result = e.results[idx];
-            let txt = result[result.length - 1].transcript;
+            let interimTranscript = "";
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                let transcript = e.results[i][0].transcript;
+                if (e.results[i].isFinal) {
+                    finalTranscript += transcript + " ";
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
 
-            if (result.isFinal) {
-                output.innerText += " " + txt;
-                output.style.color = "#000";
+            // Show both final + interim
+            output.innerText = finalTranscript + interimTranscript;
+
+            // Style interim as gray, final as black
+            output.style.color = interimTranscript ? "#777" : "#000";
+
+            // Show copy button only if we have final text
+            if (finalTranscript.trim() !== "") {
                 copyBtn.style.display = "inline-block";
-            } else {
-                output.innerText = txt;
-                output.style.color = "#777";
             }
         };
 
+        // Copy to clipboard
         copyBtn.onclick = () => {
-            navigator.clipboard.writeText(output.innerText);
+            navigator.clipboard.writeText(finalTranscript.trim());
             alert("పదాలు కాపీ అయ్యాయి!");
+        };
+
+        // Optional: Spacebar shortcut
+        document.onkeyup = (e) => {
+            if (e.code === 'Space') {
+                toggleBtn.click();
+            }
         };
     </script>
 </body>
