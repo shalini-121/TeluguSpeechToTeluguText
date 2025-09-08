@@ -14,8 +14,8 @@
         <p class="subtitle">దయచేసి మాట్లాడి, ఆ తర్వాత ఫలితాన్ని చూడండి</p>
 
         <div class="btn-container">
-            <button id="start-btn">▶ ప్రారంభించు</button>
-            <button id="reset-btn" style="display: none;">↺ మళ్ళీ మొదలు పెట్టు</button>
+            <button id="toggle-btn">▶ ప్రారంభించు</button>
+            <button id="copy-btn" style="display:none;">📋 కాపీ</button>
             <div class="loading-spinner" id="spinner"></div>
         </div>
 
@@ -23,51 +23,90 @@
     </div>
 
     <script>
-        const startBtn = document.getElementById('start-btn');
-        const resetBtn = document.getElementById('reset-btn');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const copyBtn = document.getElementById('copy-btn');
         const output = document.getElementById('speech-output');
         const spinner = document.getElementById('spinner');
 
-        let recognition;
+        let recognizing = false;
+        let finalTranscript = ""; // store confirmed results
 
-        startBtn.addEventListener('click', () => {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("మీ బ్రౌజర్ మాట్లాడిన పదాలను గుర్తించలేదు. Chrome బ్రౌజర్ వాడండి.");
-                return;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert("మీ బ్రౌజర్ మాట్లాడిన పదాలను గుర్తించలేదు. Chrome బ్రౌజర్ వాడండి.");
+        }
+
+        const recog = new SpeechRecognition();
+        recog.lang = "te-IN";
+        recog.continuous = true;
+        recog.interimResults = true;
+
+        // Toggle Start/Stop
+        toggleBtn.onclick = function() {
+            if (recognizing) {
+                recog.stop();
+            } else {
+                output.innerText = "";
+                finalTranscript = "";
+                recog.start();
+            }
+        };
+
+        recog.onstart = () => {
+            recognizing = true;
+            toggleBtn.innerText = "■ ఆపు";
+            spinner.style.display = "block";
+            output.style.color = "#777";
+            output.innerText = "వినిపిస్తోంది... దయచేసి మాట్లాడండి.";
+        };
+
+        recog.onend = () => {
+            recognizing = false;
+            toggleBtn.innerText = "▶ ప్రారంభించు";
+            spinner.style.display = "none";
+            if (output.innerText.trim() === "" || output.innerText.includes("వినిపిస్తోంది")) {
+                output.innerText = "ఇక్కడ మీరు మాట్లాడిన పదాలు కనిపిస్తాయి...";
+            }
+        };
+
+        // ✅ Fixed onresult (no duplicate text)
+        recog.onresult = (e) => {
+            let interimTranscript = "";
+            for (let i = e.resultIndex; i < e.results.length; ++i) {
+                let transcript = e.results[i][0].transcript;
+                if (e.results[i].isFinal) {
+                    finalTranscript += transcript + " ";
+                } else {
+                    interimTranscript += transcript;
+                }
             }
 
-            recognition = new SpeechRecognition();
-            recognition.lang = 'te-IN';
-            recognition.continuous = false;
-            recognition.interimResults = false;
+            // Show both final + interim
+            output.innerText = finalTranscript + interimTranscript;
 
-            output.innerText = "వినిపిస్తోంది... దయచేసి మాట్లాడండి.";
-            spinner.style.display = 'block';
-            startBtn.disabled = true;
+            // Style interim as gray, final as black
+            output.style.color = interimTranscript ? "#777" : "#000";
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                output.innerText = transcript;
-            };
+            // Show copy button only if we have final text
+            if (finalTranscript.trim() !== "") {
+                copyBtn.style.display = "inline-block";
+            }
+        };
 
-            recognition.onerror = (event) => {
-                output.innerText = "లోపం: " + event.error;
-            };
+        // Copy to clipboard
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(finalTranscript.trim());
+            alert("పదాలు కాపీ అయ్యాయి!");
+        };
 
-            recognition.onend = () => {
-                spinner.style.display = 'none';
-                startBtn.disabled = false;
-                resetBtn.style.display = 'inline-block';
-            };
-
-            recognition.start();
-        });
-
-        resetBtn.addEventListener('click', () => {
-            output.innerText = "ఇక్కడ మీరు మాట్లాడిన పదాలు కనిపిస్తాయి...";
-            resetBtn.style.display = 'none';
-        });
+        // Optional: Spacebar shortcut
+        document.onkeyup = (e) => {
+            if (e.code === 'Space') {
+                toggleBtn.click();
+            }
+        };
     </script>
 </body>
 </html>
+
